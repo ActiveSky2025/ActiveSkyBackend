@@ -26,11 +26,14 @@ class SpotCreate(BaseModel):
 class ReviewCreate(BaseModel):
     rating: int  # 1-5
     comment: Optional[str] = None
+    user_id: Optional[str] = None  # ID del usuario logueado (opcional, debe ser UUID válido)
 
 
 class VisitCreate(BaseModel):
     visit_date: date
     notes: Optional[str] = None
+    user_id: Optional[str] = None  # ID del usuario logueado (opcional, debe ser UUID válido)
+    weather_data: Optional[dict] = None  # Datos meteorológicos opcionales
 
 
 # ============================================
@@ -133,15 +136,21 @@ async def get_spot_reviews(spot_id: str):
 
 
 @router.post("/{spot_id}/reviews")
-async def add_review(spot_id: str, review: ReviewCreate, user_id: str = "anonymous"):
+async def add_review(spot_id: str, review: ReviewCreate):
     """Agregar una reseña a un spot"""
     try:
+        # Validar que user_id esté presente
+        if not review.user_id:
+            raise HTTPException(status_code=400, detail="user_id es requerido. Debes estar logueado para dejar una reseña.")
+        
         # Validar rating
         if review.rating < 1 or review.rating > 5:
             raise HTTPException(status_code=400, detail="Rating debe estar entre 1 y 5")
         
-        new_review = db.create_review(spot_id, user_id, review.rating, review.comment)
+        new_review = db.create_review(spot_id, review.user_id, review.rating, review.comment)
         return {"message": "Reseña agregada exitosamente", "review": new_review}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -162,20 +171,24 @@ async def get_spot_visit_history(spot_id: str):
 @router.post("/{spot_id}/visit")
 async def register_spot_visit(
     spot_id: str, 
-    visit: VisitCreate, 
-    user_id: str = "anonymous",
-    weather_data: Optional[dict] = None
+    visit: VisitCreate
 ):
     """Registrar una visita a un spot (con datos meteorológicos opcionales)"""
     try:
+        # Validar que user_id esté presente
+        if not visit.user_id:
+            raise HTTPException(status_code=400, detail="user_id es requerido. Debes estar logueado para registrar una visita.")
+        
         new_visit = db.register_visit(
-            user_id, 
+            visit.user_id, 
             spot_id, 
             visit.visit_date, 
             visit.notes,
-            weather_data
+            visit.weather_data  # Ahora viene del body
         )
         return {"message": "Visita registrada exitosamente", "visit": new_visit}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
