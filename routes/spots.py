@@ -123,6 +123,12 @@ async def get_spot_reviews(spot_id: str):
 # ENDPOINTS - VISITS
 # ============================================
 
+@router.get("/{spot_id}/visits")
+async def get_spot_visit_history(spot_id: str):
+    """Obtener historial de visitas de un spot"""
+    visits = db.get_visits_by_spot(spot_id)
+    return {"visits": visits, "total": len(visits)}
+
 @router.post("/{spot_id}/visit")
 async def register_spot_visit(
     spot_id: str, 
