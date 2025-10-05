@@ -98,6 +98,40 @@ async def create_new_spot(spot: SpotCreate, user_id: Optional[str] = None):
 # ENDPOINTS - REVIEWS
 # ============================================
 
+
+@router.get("/{spot_id}/reviews")
+async def get_spot_reviews(spot_id: str):
+    """
+    Obtener todas las reviews de un spot.
+    Devuelve un arreglo con las reviews ordenadas por fecha (más recientes primero).
+    """
+    try:
+        reviews = db.get_reviews_by_spot(spot_id)
+        
+        # Opcional: calcular estadísticas
+        if reviews:
+            avg_rating = sum(r['rating'] for r in reviews) / len(reviews)
+            rating_distribution = {
+                '5': len([r for r in reviews if r['rating'] == 5]),
+                '4': len([r for r in reviews if r['rating'] == 4]),
+                '3': len([r for r in reviews if r['rating'] == 3]),
+                '2': len([r for r in reviews if r['rating'] == 2]),
+                '1': len([r for r in reviews if r['rating'] == 1])
+            }
+        else:
+            avg_rating = 0
+            rating_distribution = {'5': 0, '4': 0, '3': 0, '2': 0, '1': 0}
+        
+        return {
+            "reviews": reviews,
+            "total": len(reviews),
+            "average_rating": round(avg_rating, 2),
+            "rating_distribution": rating_distribution
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/{spot_id}/reviews")
 async def add_review(spot_id: str, review: ReviewCreate, user_id: str = "anonymous"):
     """Agregar una reseña a un spot"""
@@ -112,11 +146,7 @@ async def add_review(spot_id: str, review: ReviewCreate, user_id: str = "anonymo
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/{spot_id}/reviews")
-async def get_spot_reviews(spot_id: str):
-    """Obtener todas las reseñas de un spot"""
-    reviews = db.get_reviews_by_spot(spot_id)
-    return {"reviews": reviews, "total": len(reviews)}
+
 
 
 # ============================================

@@ -71,7 +71,7 @@ def create_spot(spot_data: Dict[str, Any], user_id: Optional[str] = None) -> Dic
 def get_spot_by_id(spot_id: str) -> Dict[str, Any]:
     """Obtener un spot por ID con reviews"""
     response = supabase.table('spots') \
-        .select('*, activities(name, slug, icon), spot_reviews(rating, comment, created_at, users(username, avatar_url))') \
+        .select('*, activities(name, slug, icon), spot_reviews(rating, comment, created_at, user_id)') \
         .eq('id', spot_id) \
         .single() \
         .execute()
@@ -81,6 +81,20 @@ def get_spot_by_id(spot_id: str) -> Dict[str, Any]:
 # ============================================
 # REVIEWS
 # ============================================
+
+def get_reviews_by_spot(spot_id: str) -> list:
+    """Obtener todas las reviews de un spot específico"""
+    try:
+        response = supabase.table('spot_reviews') \
+            .select('*') \
+            .eq('spot_id', spot_id) \
+            .order('created_at', desc=True) \
+            .execute()
+        
+        return response.data if response.data else []
+    except Exception as e:
+        print(f"Error obteniendo reviews del spot: {e}")
+        raise Exception(str(e))
 
 def create_review(spot_id: str, user_id: str, rating: int, comment: str = None) -> Dict[str, Any]:
     """Crear una reseña para un spot"""
@@ -92,16 +106,6 @@ def create_review(spot_id: str, user_id: str, rating: int, comment: str = None) 
     }
     response = supabase.table('spot_reviews').insert(review_data).execute()
     return response.data[0] if response.data else None
-
-
-def get_reviews_by_spot(spot_id: str) -> List[Dict[str, Any]]:
-    """Obtener todas las reseñas de un spot"""
-    response = supabase.table('spot_reviews') \
-        .select('*, users(username, avatar_url)') \
-        .eq('spot_id', spot_id) \
-        .order('created_at', desc=True) \
-        .execute()
-    return response.data
 
 
 # ============================================
@@ -150,7 +154,7 @@ def create_spot_photo(spot_id: str, user_id: str, photo_url: str, caption: str =
 def get_spot_photos(spot_id: str) -> List[Dict[str, Any]]:
     """Obtener fotos de un spot"""
     response = supabase.table('spot_photos') \
-        .select('*, users(username, avatar_url)') \
+        .select('*') \
         .eq('spot_id', spot_id) \
         .order('created_at', desc=True) \
         .execute()
@@ -178,7 +182,7 @@ def upload_photo_to_storage(file_bytes: bytes, file_extension: str, user_id: str
 def get_user_profile(user_id: str) -> Dict[str, Any]:
     """Obtener perfil de usuario"""
     response = supabase.table('users') \
-        .select('*, user_favorite_activities(activities(name, slug, icon))') \
+        .select('*') \
         .eq('id', user_id) \
         .single() \
         .execute()
