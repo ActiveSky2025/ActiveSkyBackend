@@ -1,22 +1,24 @@
 from fastapi import APIRouter
+import services.weather_services as weather_services
+
 
 router = APIRouter()
 
-@router.get("/forecast")
-async def get_forecast(lat: float, lon: float, date: str):
-    """Obtener pronóstico del clima"""
-    return {
-        "message": "Weather forecast endpoint",
-        "lat": lat,
-        "lon": lon,
-        "date": date
-    }
+@router.get("/recommendations")
+async def get_forecast(date: str, activity: str, coordinates: str):
 
-@router.post("/recommendations")
-async def get_recommendations(lat: float, lon: float, date: str, activity: str):
-    """Obtener recomendaciones para actividad"""
-    return {
-        "message": "Recommendations endpoint",
+   weather_data =  weather_services.get_weather_for(date, coordinates, activity)
+   
+   
+
+   # Regresar weather_data
+   return {
+        "message": "ENDPOINT DE PRONOSTICO",
         "activity": activity,
-        "recommendation": "TODO: implementar lógica"
+        "coordinates": coordinates,
+        "date": date,
+        "weather": weather_data
     }
+#hykmmj     
+
+
