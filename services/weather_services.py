@@ -61,7 +61,7 @@ def get_weather_for(day: str,
  
     results = []
 
-    for i in range(1, 30):  
+    for i in range(1, 3):  
         year = parsed_day.year - i
         try:
             query_date = parsed_day.replace(year=year)
