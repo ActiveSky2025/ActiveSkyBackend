@@ -1,40 +1,43 @@
+# recomendacion.py (adaptado para análisis estadísticos)
+from services.weather_analytics import analyze_weather_data
+
 # Diccionario con los rangos óptimos para cada actividad (usando promedios históricos)
 rangos = {
     "Running": {
-        "temperatura": (10, 22),
+        "temperatura": (10, 23),
         "viento": (0, 6),  # m/s
         "uv": (0, 5),
-        "precipitacion_probabilidad": (0, 25),  # % de probabilidad
-        "nubes": (30, 70)  # %
+        "precipitacion_probabilidad": (0, 20),  # % de probabilidad
+        "nubes": (20, 70)  # %
     },
     "Ciclismo": {
         "temperatura": (12, 26),
-        "viento": (0, 5),  # m/s
-        "uv": (0, 5 ),
-        "precipitacion_probabilidad": (0, 15),
-        "nubes": (10, 60)
-    },
-    "Senderismo": {
-        "temperatura": (14, 26),
-        "viento": (0, 6),  # m/s
+        "viento": (0, 7),  # m/s
         "uv": (0, 5),
-        "precipitacion_probabilidad": (0, 20),
+        "precipitacion_probabilidad": (0, 15),
         "nubes": (20, 60)
     },
+    "Senderismo": {
+        "temperatura": (13, 25),
+        "viento": (0, 10),  # m/s
+        "uv": (0, 5),
+        "precipitacion_probabilidad": (0, 20),
+        "nubes": (10, 50)
+    },
     "Camping": {
-        "temperatura": (12, 22),
-        "viento": (0, 4),  # m/s
+        "temperatura": (10, 23),
+        "viento": (0, 5),  # m/s
         "uv": (0, 5),
         "precipitacion_probabilidad": (0, 10),
-        "nubes": (10, 70)
+        "nubes": (20, 60)
     },
     "Picnic": {
-        "temperatura": (18, 28),
+        "temperatura": (17, 28),
         "viento": (0, 4),  # m/s
         "uv": (0, 5),
         "precipitacion_probabilidad": (0, 10),
-        "nubes": (25, 70)
-    }
+        "nubes": (30, 60)
+    },
 }
 
 def extraer_datos_desde_analytics(analytics_result: dict) -> dict:
@@ -106,7 +109,7 @@ def evaluar_actividad_con_analytics(analytics_result: dict, actividad: str) -> s
     if not recomendaciones:
         return f"✅ Condiciones históricas recomendadas para {actividad}"
     else:
-        return f"⚠ Condiciones históricas no recomendadas para {actividad}: " + "; ".join(recomendaciones)
+        return f"⚠️ Condiciones históricas no recomendadas para {actividad}: " + "; ".join(recomendaciones)
 
 def obtener_recomendaciones_multiples(analytics_result: dict, actividades: list = None) -> dict:
     """
@@ -139,7 +142,7 @@ def obtener_recomendaciones_multiples(analytics_result: dict, actividades: list 
         "recomendaciones": resultados,
         "mejor_opcion": mejor_actividad,
         "resumen": f"{len(actividades_recomendadas)} de {len(actividades)} actividades son recomendables"
-    }   
+    }
 
 # Función de compatibilidad hacia atrás - para usar con datos simples si es necesario
 def evaluar_clima(valores: dict, actividad: str) -> str:
@@ -166,5 +169,28 @@ def evaluar_clima(valores: dict, actividad: str) -> str:
     if not recomendaciones:
         return f"✅ Clima recomendado para {actividad}"
     else:
-        return f"⚠ Clima no recomendado para {actividad}: " + "; ".join(recomendaciones)
+        return f"⚠️ Clima no recomendado para {actividad}: " + "; ".join(recomendaciones)
 
+# Ejemplo de uso con análisis estadístico
+if __name__ == "__main__":
+    # Simular datos de analytics (como los que vendrían de weather_services.py)
+    analytics_ejemplo = {
+        "temperature": {
+            "min": {"average": 12.5},
+            "max": {"average": 24.3}
+        },
+        "wind": {"average_speed": 3.2},
+        "precipitation": {"probability_of_rain": 15.0},
+        "clouds": {"average_coverage": 45.0},
+        "uv": {"average_index": 5.2}
+    }
+    
+    # Evaluar una actividad específica
+    actividad = "Running"
+    recomendacion = evaluar_actividad_con_analytics(analytics_ejemplo, actividad)
+    print(recomendacion)
+    
+    # Obtener recomendaciones para todas las actividades
+    todas_recomendaciones = obtener_recomendaciones_multiples(analytics_ejemplo)
+    print(f"\nMejor opción: {todas_recomendaciones['mejor_opcion']}")
+    print(f"Resumen: {todas_recomendaciones['resumen']}")
