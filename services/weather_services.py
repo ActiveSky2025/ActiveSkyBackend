@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional
 from datetime import date, datetime
 import requests
+from services.weather_analytics import analyze_weather_data  # ← AGREGAR ESTO
 
 class ValidationError(Exception):
     """Excepción lanzada cuando la entrada no es válida."""
@@ -25,12 +26,11 @@ def get_weather_for(day: str,
     except Exception:
         raise ValidationError("'day' debe tener formato 'YYYYMMDD'")
 
-    # 2) Normalizar place (aquí intentamos aceptar "lat, lon" en string)
+    # 2) Normalizar place
     normalized_place: Dict[str, Any]
     if isinstance(place, dict) and 'lat' in place and 'lon' in place:
         normalized_place = { 'lat': float(place['lat']), 'lon': float(place['lon']), 'name': opts.get('place_name') }
     elif isinstance(place, str):
-        # Intentar parsear coords en formato "lat, lon" (strings), ejemplo: "12.212, 2121.2"
         place_str = place.strip()
         coords = [p.strip() for p in place_str.split(',')]
         if len(coords) == 2:
@@ -39,38 +39,31 @@ def get_weather_for(day: str,
                 lon = float(coords[1])
                 normalized_place = { 'lat': lat, 'lon': lon, 'name': opts.get('place_name') or place_str }
             except ValueError:
-                # Si no se pueden convertir a float, tratamos el string como nombre de lugar
                 normalized_place = { 'lat': None, 'lon': None, 'name': place_str }
         else:
-            # No es "lat, lon" → lo dejamos como nombre
             normalized_place = { 'lat': None, 'lon': None, 'name': place_str }
     else:
         raise ValidationError("'place' debe ser dict{lat,lon} o string 'City,Country' o 'lat, lon'")
 
-    # 3) Validar activity simple
+    # 3) Validar activity
     if not isinstance(activity, str) or not activity:
         raise ValidationError("'activity' debe ser un string no vacío")
 
-    # 4) Aquí llamaríamos a la API externa. De momento devolvemos un resultado de ejemplo.
-        
-        
+    # 4) Llamar a NASA POWER API
     parameters = "T2M_MIN,T2M_MAX,WS2M,PRECTOTCORR,CLOUD_AMT,ALLSKY_SFC_UV_INDEX"
+    url = "https://power.larc.nasa.gov/api/temporal/daily/point"
 
-    url  = "https://power.larc.nasa.gov/api/temporal/daily/point"
-
- 
     results = []
 
-    for i in range(1, 11):  
+    for i in range(1, 3):  
         year = parsed_day.year - i
         try:
             query_date = parsed_day.replace(year=year)
         except ValueError:
-            # caso 29-feb en años no bisiestos: ajustar a 28-feb
             query_date = date(year, parsed_day.month, parsed_day.day - 1)
 
         start = int(query_date.strftime("%Y%m%d"))
-        end = start  # misma fecha inicio/fin para un día concreto
+        end = start
 
         payload = {
             "start": start,
@@ -87,17 +80,17 @@ def get_weather_for(day: str,
             r.raise_for_status()
             resp = r.json()
         except requests.exceptions.RequestException as e:
-            # captura timeouts, conexión y HTTP errors
             raise ExternalAPIError(f"Error al llamar a la API externa: {e}")
 
         results.append(resp['properties']['parameter'])
 
+    # 5) ANALIZAR LOS DATOS ← NUEVO
+    analytics = analyze_weather_data(results)
 
-
-
-    sample_result = {
-        'weather': { 'data': results }
+    return {
+        'raw_data': results,      # Datos crudos por si los necesitan
+        'analytics': analytics,    # Análisis estadístico completo
+        'location': normalized_place,
+        'date': day,
+        'activity': activity
     }
-
-    return sample_result
-
