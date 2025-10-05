@@ -17,3 +17,7 @@ pydantic-settings>=2.0.0
 
 # CORS
 python-multipart>=0.0.6
+
+# File handling
+python-magic>=0.4.27
+pillow>=10.0.0

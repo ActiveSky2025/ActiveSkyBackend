@@ -2,7 +2,11 @@ from typing import Any, Dict, Optional
 from datetime import date, datetime
 import requests
 from services.weather_analytics import analyze_weather_data  # ← AGREGAR ESTO
-
+from .recomendacion import (
+    extraer_datos_desde_analytics,
+    evaluar_actividad_con_analytics,
+    
+)
 class ValidationError(Exception):
     """Excepción lanzada cuando la entrada no es válida."""
 
@@ -55,7 +59,8 @@ def get_weather_for(day: str,
 
     results = []
 
-    for i in range(1, 3):  
+    # Cambiar a 30 años si quieres: range(1, 31)
+    for i in range(1, 25):  
         year = parsed_day.year - i
         try:
             query_date = parsed_day.replace(year=year)
@@ -76,7 +81,7 @@ def get_weather_for(day: str,
         }
 
         try:
-            r = requests.get(url, params=payload, timeout=7)
+            r = requests.get(url, params=payload, timeout=20)
             r.raise_for_status()
             resp = r.json()
         except requests.exceptions.RequestException as e:
@@ -87,10 +92,37 @@ def get_weather_for(day: str,
     # 5) ANALIZAR LOS DATOS ← NUEVO
     analytics = analyze_weather_data(results)
 
+    # 6) Devolver todo  
+    recomendation = evaluar_actividad_con_analytics(analytics, activity)
+
+ # 6) Agregar metadata (requisito de NASA)
+    metadata = {
+        "source": "NASA POWER API v2.0",
+        "source_url": "https://power.larc.nasa.gov/",
+        "units": {
+            "temperature": "°C",
+            "precipitation": "mm/day",
+            "wind_speed": "m/s",
+            "cloud_coverage": "%",
+            "uv_index": "index (0-11+)"
+        },
+        "date_range": f"{parsed_day.year - 30}-{parsed_day.year - 1}",
+        "total_years": 30,
+        "window": "±1 day",
+        "location": {
+            "latitude": normalized_place['lat'],
+            "longitude": normalized_place['lon'],
+            "name": normalized_place.get('name')
+        },
+        "query_date": day,
+        "activity": activity
+    }
+
     return {
         'raw_data': results,      # Datos crudos por si los necesitan
         'analytics': analytics,    # Análisis estadístico completo
         'location': normalized_place,
         'date': day,
-        'activity': activity
+        'recomendacion': recomendation,
+        'metadata': metadata
     }
