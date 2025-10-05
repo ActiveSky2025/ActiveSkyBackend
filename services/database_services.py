@@ -192,3 +192,69 @@ def update_user_profile(user_id: str, profile_data: Dict[str, Any]) -> Dict[str,
         .eq('id', user_id) \
         .execute()
     return response.data[0] if response.data else None
+
+# ============================================
+# USERS
+# ============================================
+
+def create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Crear nuevo usuario"""
+    try:
+        print(f"💾 Creando usuario: {user_data.get('email')}")
+        
+        response = supabase.table('users').insert(user_data).execute()
+        
+        print(f"✅ Usuario creado exitosamente")
+        
+        return response.data[0] if response.data else None
+        
+    except Exception as e:
+        print(f"❌ Error en create_user: {e}")
+        raise e
+
+def get_user_by_id(user_id: str) -> Optional[Dict[str, Any]]:
+    """Obtener usuario por ID"""
+    try:
+        response = supabase.table('users').select('*').eq('id', user_id).single().execute()
+        return response.data if response.data else None
+    except Exception as e:
+        print(f"❌ Error obteniendo usuario: {e}")
+        return None
+
+def update_user(user_id: str, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Actualizar usuario"""
+    try:
+        update_data['updated_at'] = 'now()'
+        response = supabase.table('users').update(update_data).eq('id', user_id).execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"❌ Error actualizando usuario: {e}")
+        raise e
+
+def get_user_visits(user_id: str) -> List[Dict[str, Any]]:
+    """Obtener visitas del usuario con información del spot"""
+    try:
+        response = supabase.table('user_visits') \
+            .select('*, spots(id, name, city, country, activities(name, icon))') \
+            .eq('user_id', user_id) \
+            .order('visit_date', desc=True) \
+            .execute()
+        
+        return response.data if response.data else []
+    except Exception as e:
+        print(f"❌ Error obteniendo visitas: {e}")
+        return []
+
+def get_user_reviews(user_id: str) -> List[Dict[str, Any]]:
+    """Obtener reseñas del usuario"""
+    try:
+        response = supabase.table('spot_reviews') \
+            .select('*, spots(id, name, city)') \
+            .eq('user_id', user_id) \
+            .order('created_at', desc=True) \
+            .execute()
+        
+        return response.data if response.data else []
+    except Exception as e:
+        print(f"❌ Error obteniendo reseñas: {e}")
+        return []

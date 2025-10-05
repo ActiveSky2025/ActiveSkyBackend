@@ -2,7 +2,7 @@
 
 # Diccionario con los rangos óptimos para cada actividad (usando promedios históricos)
 rangos = {
-    "Running": {
+    "running": {
         "temperatura": (10, 22),
         "viento": (0, 5),  # m/s
         "uv": (0, 6),
@@ -16,7 +16,7 @@ rangos = {
         "precipitacion_probabilidad": (0, 40),
         "nubes": (0, 80)
     },
-    "Senderismo": {
+    "hiking": {
         "temperatura": (8, 24),
         "viento": (0, 6),  # m/s
         "uv": (0, 6),
